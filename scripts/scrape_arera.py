@@ -47,24 +47,17 @@ def carica_json() -> dict:
 
 def salva_json(dati: dict):
     """
-    Salva il JSON mantenendo la formattazione numerica originale
-    (6 decimali fissi, niente notazione scientifica).
+    Salva il JSON senza notazione scientifica e senza zeri decimali finali.
     """
     testo = json.dumps(dati, indent=2, ensure_ascii=False)
 
-    # Forza 6 decimali per tutti i float nel JSON
     def formatta_numero(m):
-        valore = float(m.group(0))
-        # Se è un numero con decimali, forza 6 cifre decimali
-        if '.' in m.group(0) or 'e' in m.group(0).lower():
-            return f"{valore:.6f}"
-        return m.group(0)
+        s = m.group(0)
+        if '.' in s or 'e' in s.lower():
+            return f"{float(s):.10g}"
+        return s
 
-    testo = re.sub(
-        r'-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?',
-        formatta_numero,
-        testo
-    )
+    testo = re.sub(r'-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?', formatta_numero, testo)
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(testo)
