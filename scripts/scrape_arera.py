@@ -54,7 +54,7 @@ def salva_json(dati: dict):
     def formatta_numero(m):
         s = m.group(0)
         if '.' in s or 'e' in s.lower():
-            return f"{float(s):.10g}"
+            return f"{float(s):.10f}".rstrip('0').rstrip('.')
         return s
 
     testo = re.sub(r'-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?', formatta_numero, testo)
