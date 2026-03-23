@@ -20,7 +20,7 @@
     "quota_potenza": 1.96,
     "uc3": 0.00276,
     "uc6_fisso": 0.016567,
-    "uc6_variabile": 7e-05
+    "uc6_variabile": 0.00007
   },
   "oneri_sistema": {
     "asos": 0.028657,
