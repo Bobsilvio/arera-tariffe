@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-OUTPUT_FILE = Path(__file__).parent / "data" / "tariffe_arera.json"
+OUTPUT_FILE = Path(__file__).parent.parent / "data" / "tariffe_arera.json"
 
 
 def get_trimestre(d: date) -> str:
