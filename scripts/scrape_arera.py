@@ -1,36 +1,123 @@
-name: Aggiorna Tariffe ARERA
+#!/usr/bin/env python3
+"""
+Script per aggiornare le tariffe ARERA nel file data/tariffe_arera.json.
+Gira ogni mese tramite GitHub Actions.
+"""
 
-on:
-  schedule:
-    # Ogni 1° del mese alle 08:00 UTC → mantiene il workflow attivo su GitHub
-    - cron: '0 8 1 * *'
-  workflow_dispatch:  # permette di avviarlo manualmente da GitHub
+import json
+import re
+from datetime import date
+from pathlib import Path
 
-jobs:
-  aggiorna:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+import requests
+from bs4 import BeautifulSoup
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+OUTPUT_FILE = Path(__file__).parent / "data" / "tariffe_arera.json"
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
 
-      - name: Installa dipendenze
-        run: pip install requests beautifulsoup4 lxml
+def get_trimestre(d: date) -> str:
+    return f"Q{(d.month - 1) // 3 + 1}-{d.year}"
 
-      - name: Scarica tariffe ARERA
-        run: python3 scripts/scrape_arera.py
 
-      - name: Commit e push se ci sono modifiche
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/tariffe_arera.json
-          git diff --staged --quiet || git commit -m "🔄 Aggiornamento tariffe ARERA $(date +'%Y-%m-%d')"
-          git push
+def prossimo_aggiornamento(d: date) -> str:
+    mesi_trim = [1, 4, 7, 10]
+    for m in mesi_trim:
+        if d.month < m:
+            return date(d.year, m, 1).isoformat()
+    return date(d.year + 1, 1, 1).isoformat()
+
+
+def carica_json() -> dict:
+    with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def salva_json(dati: dict):
+    """
+    Salva il JSON mantenendo la formattazione numerica originale
+    (6 decimali fissi, niente notazione scientifica).
+    """
+    testo = json.dumps(dati, indent=2, ensure_ascii=False)
+
+    # Forza 6 decimali per tutti i float nel JSON
+    def formatta_numero(m):
+        valore = float(m.group(0))
+        # Se è un numero con decimali, forza 6 cifre decimali
+        if '.' in m.group(0) or 'e' in m.group(0).lower():
+            return f"{valore:.6f}"
+        return m.group(0)
+
+    testo = re.sub(
+        r'-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?',
+        formatta_numero,
+        testo
+    )
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(testo)
+    print(f"✅ Salvato: {OUTPUT_FILE}")
+
+
+def scrape_arera() -> dict | None:
+    """
+    Tenta di scrapare i valori dalla pagina ARERA.
+    Restituisce None se lo scraping fallisce.
+    """
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; HomeAssistant-bot/1.0)"}
+        r = requests.get(
+            "https://www.arera.it/it/dati/elenco_cm.htm",
+            headers=headers,
+            timeout=15
+        )
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "lxml")
+        testo = soup.get_text()
+
+        nuovi = {}
+        m = re.search(r"ASOS[^\d]*(\d+[.,]\d+)", testo)
+        if m:
+            nuovi["asos"] = float(m.group(1).replace(",", "."))
+        m = re.search(r"ARIM[^\d]*(\d+[.,]\d+)", testo)
+        if m:
+            nuovi["arim"] = float(m.group(1).replace(",", "."))
+
+        if nuovi:
+            print(f"📡 Valori trovati via scraping: {nuovi}")
+            return nuovi
+        else:
+            print("⚠️ Scraping riuscito ma nessun valore estratto")
+            return None
+
+    except Exception as e:
+        print(f"⚠️ Scraping fallito: {e}")
+        return None
+
+
+def main():
+    oggi = date.today()
+    dati = carica_json()
+
+    print(f"📅 Data: {oggi.isoformat()} — Trimestre: {get_trimestre(oggi)}")
+
+    # Aggiorna metadati — sovrascrive i campi esistenti, non li duplica
+    dati["_info"]["aggiornato_il"] = oggi.isoformat()
+    dati["_info"]["trimestre"] = get_trimestre(oggi)
+    dati["_info"]["prossimo_aggiornamento"] = prossimo_aggiornamento(oggi)
+
+    # Tenta scraping ARERA
+    nuovi_valori = scrape_arera()
+    if nuovi_valori:
+        if "asos" in nuovi_valori:
+            dati["oneri_sistema"]["asos"] = nuovi_valori["asos"]
+        if "arim" in nuovi_valori:
+            dati["oneri_sistema"]["arim"] = nuovi_valori["arim"]
+        print("✅ Valori aggiornati da ARERA")
+    else:
+        print("ℹ️ Nessun aggiornamento automatico — valori esistenti mantenuti")
+
+    salva_json(dati)
+
+
+if __name__ == "__main__":
+    main()
