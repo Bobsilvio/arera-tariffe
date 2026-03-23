@@ -8,26 +8,26 @@
     "autore": "Silviosmart"
   },
   "materia_energia": {
-    "perdite_rete_perc": 8.73,
+    "perdite_rete_perc": 8.730000,
     "dispbt": 0.102592,
-    "dispacciamento": 0.01066,
+    "dispacciamento": 0.010660,
     "mercato_capacita": 0.010583,
-    "pno": 0.007
+    "pno": 0.007000
   },
   "trasporto": {
-    "quota_energia": 0.0119,
-    "quota_fissa": 1.92,
-    "quota_potenza": 1.96,
-    "uc3": 0.00276,
+    "quota_energia": 0.011900,
+    "quota_fissa": 1.920000,
+    "quota_potenza": 1.960000,
+    "uc3": 0.002760,
     "uc6_fisso": 0.016567,
-    "uc6_variabile": 7e-05
+    "uc6_variabile": 0.000070
   },
   "oneri_sistema": {
     "asos": 0.028657,
     "arim": 0.001638
   },
   "imposte": {
-    "erariale_domestico_residente_over3kw": 0.0227,
+    "erariale_domestico_residente_over3kw": 0.022700,
     "iva_perc": 10
   }
 }
