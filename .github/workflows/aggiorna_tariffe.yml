@@ -25,7 +25,7 @@ jobs:
         run: pip install requests beautifulsoup4 lxml
 
       - name: Scarica tariffe ARERA
-        run: python3 scrape_arera.py
+        run: python3 scripts/scrape_arera.py
 
       - name: Commit e push se ci sono modifiche
         run: |
