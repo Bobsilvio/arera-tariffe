@@ -28,6 +28,19 @@ def prossimo_aggiornamento(d: date) -> str:
 
 
 def carica_json() -> dict:
+    if not OUTPUT_FILE.exists():
+        OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        return {
+            "_info": {
+                "aggiornato_il": "",
+                "trimestre": "",
+                "prossimo_aggiornamento": ""
+            },
+            "oneri_sistema": {
+                "asos": 0.0,
+                "arim": 0.0
+            }
+        }
     with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
