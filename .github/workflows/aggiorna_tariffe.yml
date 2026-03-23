@@ -2,8 +2,8 @@ name: Aggiorna Tariffe ARERA
 
 on:
   schedule:
-    # Ogni trimestre: 1 Gennaio, 1 Aprile, 1 Luglio, 1 Ottobre alle 08:00
-    - cron: '0 8 1 1,4,7,10 *'
+    # Ogni 1° del mese alle 08:00 UTC → mantiene il workflow attivo su GitHub
+    - cron: '0 8 1 * *'
   workflow_dispatch:  # permette di avviarlo manualmente da GitHub
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         run: pip install requests beautifulsoup4 lxml
 
       - name: Scarica tariffe ARERA
-        run: python3 scripts/scrape_arera.py
+        run: python3 scrape_arera.py
 
       - name: Commit e push se ci sono modifiche
         run: |
